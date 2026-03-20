@@ -418,7 +418,6 @@ def _run_sync_registration_task(task_uuid: str, email_service_type: str, proxy: 
                         from ...database.models import Account as AccountModel
                         saved_account = db.query(AccountModel).filter_by(email=result.email).first()
                         if saved_account and saved_account.access_token:
-                            token_data = generate_token_json(saved_account)
                             _cpa_ids = cpa_service_ids or []
                             if not _cpa_ids:
                                 # 未指定则取所有启用的服务
@@ -430,6 +429,10 @@ def _run_sync_registration_task(task_uuid: str, email_service_type: str, proxy: 
                                     _svc = crud.get_cpa_service_by_id(db, _sid)
                                     if not _svc:
                                         continue
+                                    token_data = generate_token_json(
+                                        saved_account,
+                                        include_proxy_url=bool(_svc.include_proxy_url),
+                                    )
                                     log_callback(f"[CPA] 上传到服务: {_svc.name}")
                                     _ok, _msg = upload_to_cpa(token_data, api_url=_svc.api_url, api_token=_svc.api_token)
                                     if _ok:

@@ -724,11 +724,12 @@ class BatchCPAUploadRequest(BaseModel):
 async def batch_upload_accounts_to_cpa(request: BatchCPAUploadRequest):
     """批量上传账号到 CPA"""
 
-    proxy = request.proxy if request.proxy else get_settings().proxy_url
+    proxy = request.proxy
 
     # 解析指定的 CPA 服务
     cpa_api_url = None
     cpa_api_token = None
+    include_proxy_url = False
     if request.cpa_service_id:
         with get_db() as db:
             svc = crud.get_cpa_service_by_id(db, request.cpa_service_id)
@@ -736,6 +737,7 @@ async def batch_upload_accounts_to_cpa(request: BatchCPAUploadRequest):
                 raise HTTPException(status_code=404, detail="指定的 CPA 服务不存在")
             cpa_api_url = svc.api_url
             cpa_api_token = svc.api_token
+            include_proxy_url = bool(svc.include_proxy_url)
 
     with get_db() as db:
         ids = resolve_account_ids(
@@ -743,7 +745,13 @@ async def batch_upload_accounts_to_cpa(request: BatchCPAUploadRequest):
             request.status_filter, request.email_service_filter, request.search_filter
         )
 
-    results = batch_upload_to_cpa(ids, proxy, api_url=cpa_api_url, api_token=cpa_api_token)
+    results = batch_upload_to_cpa(
+        ids,
+        proxy,
+        api_url=cpa_api_url,
+        api_token=cpa_api_token,
+        include_proxy_url=include_proxy_url,
+    )
     return results
 
 
@@ -751,12 +759,13 @@ async def batch_upload_accounts_to_cpa(request: BatchCPAUploadRequest):
 async def upload_account_to_cpa(account_id: int, request: Optional[CPAUploadRequest] = Body(default=None)):
     """上传单个账号到 CPA"""
 
-    proxy = request.proxy if request and request.proxy else get_settings().proxy_url
+    proxy = request.proxy if request else None
     cpa_service_id = request.cpa_service_id if request else None
 
     # 解析指定的 CPA 服务
     cpa_api_url = None
     cpa_api_token = None
+    include_proxy_url = False
     if cpa_service_id:
         with get_db() as db:
             svc = crud.get_cpa_service_by_id(db, cpa_service_id)
@@ -764,6 +773,7 @@ async def upload_account_to_cpa(account_id: int, request: Optional[CPAUploadRequ
                 raise HTTPException(status_code=404, detail="指定的 CPA 服务不存在")
             cpa_api_url = svc.api_url
             cpa_api_token = svc.api_token
+            include_proxy_url = bool(svc.include_proxy_url)
 
     with get_db() as db:
         account = crud.get_account_by_id(db, account_id)
@@ -777,7 +787,11 @@ async def upload_account_to_cpa(account_id: int, request: Optional[CPAUploadRequ
             }
 
         # 生成 Token JSON
-        token_data = generate_token_json(account)
+        token_data = generate_token_json(
+            account,
+            include_proxy_url=include_proxy_url,
+            proxy_url=proxy,
+        )
 
         # 上传
         success, message = upload_to_cpa(token_data, proxy, api_url=cpa_api_url, api_token=cpa_api_token)

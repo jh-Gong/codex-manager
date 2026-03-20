@@ -216,13 +216,14 @@
                                     <tr>
                                         <th style="width:150px;">名称</th>
                                         <th>API URL</th>
+                                        <th style="width:90px;">代理写入</th>
                                         <th style="width:80px;">状态</th>
                                         <th style="width:60px;text-align:center;">优先级</th>
                                         <th style="width:220px;">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cpa-services-table">
-                                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">加载中...</td></tr>
+                                    <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">加载中...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -406,6 +407,10 @@
                                     <label style="margin-top:10px;display:flex;align-items:center;gap:8px;">
                                         <input type="checkbox" id="cpa-service-enabled" checked> 启用
                                     </label>
+                                    <label style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+                                        <input type="checkbox" id="cpa-service-include-proxy-url"> 写入 auth file 的 <code>proxy_url</code>
+                                    </label>
+                                    <p class="hint">开启后，若账号记录了实际使用代理（含动态代理），上传到 CPA 时会一并写入。</p>
                                 </div>
                             </div>
                             <div class="form-actions">

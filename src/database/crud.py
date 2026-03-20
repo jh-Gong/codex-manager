@@ -527,6 +527,7 @@ def create_cpa_service(
     api_url: str,
     api_token: str,
     enabled: bool = True,
+    include_proxy_url: bool = False,
     priority: int = 0
 ) -> CpaService:
     """创建 CPA 服务配置"""
@@ -535,6 +536,7 @@ def create_cpa_service(
         api_url=api_url,
         api_token=api_token,
         enabled=enabled,
+        include_proxy_url=include_proxy_url,
         priority=priority
     )
     db.add(db_service)

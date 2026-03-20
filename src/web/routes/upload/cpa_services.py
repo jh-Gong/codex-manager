@@ -20,6 +20,7 @@ class CpaServiceCreate(BaseModel):
     api_url: str
     api_token: str
     enabled: bool = True
+    include_proxy_url: bool = False
     priority: int = 0
 
 
@@ -28,6 +29,7 @@ class CpaServiceUpdate(BaseModel):
     api_url: Optional[str] = None
     api_token: Optional[str] = None
     enabled: Optional[bool] = None
+    include_proxy_url: Optional[bool] = None
     priority: Optional[int] = None
 
 
@@ -37,6 +39,7 @@ class CpaServiceResponse(BaseModel):
     api_url: str
     has_token: bool
     enabled: bool
+    include_proxy_url: bool
     priority: int
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
@@ -57,6 +60,7 @@ def _to_response(svc) -> CpaServiceResponse:
         api_url=svc.api_url,
         has_token=bool(svc.api_token),
         enabled=svc.enabled,
+        include_proxy_url=bool(svc.include_proxy_url),
         priority=svc.priority,
         created_at=svc.created_at.isoformat() if svc.created_at else None,
         updated_at=svc.updated_at.isoformat() if svc.updated_at else None,
@@ -83,6 +87,7 @@ async def create_cpa_service(request: CpaServiceCreate):
             api_url=request.api_url,
             api_token=request.api_token,
             enabled=request.enabled,
+            include_proxy_url=request.include_proxy_url,
             priority=request.priority,
         )
         return _to_response(service)
@@ -111,6 +116,7 @@ async def get_cpa_service_full(service_id: int):
             "api_url": service.api_url,
             "api_token": service.api_token,
             "enabled": service.enabled,
+            "include_proxy_url": bool(service.include_proxy_url),
             "priority": service.priority,
         }
 
@@ -133,6 +139,8 @@ async def update_cpa_service(service_id: int, request: CpaServiceUpdate):
             update_data["api_token"] = request.api_token
         if request.enabled is not None:
             update_data["enabled"] = request.enabled
+        if request.include_proxy_url is not None:
+            update_data["include_proxy_url"] = request.include_proxy_url
         if request.priority is not None:
             update_data["priority"] = request.priority
 

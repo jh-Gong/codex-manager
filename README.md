@@ -46,7 +46,7 @@
     - 多个 CPA 账号打包为 `.zip`，每个账号一个独立文件
     - Sub2API 格式所有账号合并为单个 JSON
   - 上传目标（直连不走代理）：
-    - **CPA**：支持多服务配置，上传时选择目标服务
+    - **CPA**：支持多服务配置，上传时选择目标服务，可按服务开关将账号实际代理写入 auth file 的 `proxy_url`
     - **Sub2API**：支持多服务配置，标准 sub2api-data 格式
     - **Team Manager**：支持多服务配置
 
@@ -367,7 +367,7 @@ docker-compose build --no-cache
 - 所有账号和设置数据存储在 `data/register.db`
 - 日志文件写入 `logs/` 目录
 - 代理优先级：动态代理 > 代理列表（随机/默认） > 直连
-- CPA / Sub2API / Team Manager 上传始终直连，不走代理
+- CPA / Sub2API / Team Manager 上传始终直连，不走代理；其中 CPA 可选把账号记录的代理写入 auth file 的 `proxy_url`
 - 注册时自动随机生成用户名和生日（年龄范围 18-45 岁）
 - 支付链接生成使用账号 access_token 鉴权，走全局代理配置
 - 无痕浏览器优先使用 playwright（注入 cookie 直达支付页）；未安装时降级为系统 Chrome/Edge 无痕模式

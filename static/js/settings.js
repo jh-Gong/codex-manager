@@ -1224,19 +1224,20 @@ async function loadCpaServices() {
         const services = await api.get('/cpa-services');
         renderCpaServicesTable(services);
     } catch (e) {
-        elements.cpaServicesTable.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger-color);">${e.message}</td></tr>`;
+        elements.cpaServicesTable.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger-color);">${e.message}</td></tr>`;
     }
 }
 
 function renderCpaServicesTable(services) {
     if (!services || services.length === 0) {
-        elements.cpaServicesTable.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:20px;">暂无 CPA 服务，点击「添加服务」新增</td></tr>';
+        elements.cpaServicesTable.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">暂无 CPA 服务，点击「添加服务」新增</td></tr>';
         return;
     }
     elements.cpaServicesTable.innerHTML = services.map(s => `
         <tr>
             <td>${escapeHtml(s.name)}</td>
             <td style="font-size:0.85rem;color:var(--text-muted);">${escapeHtml(s.api_url)}</td>
+            <td style="text-align:center;">${s.include_proxy_url ? '🟢' : '⚪'}</td>
             <td style="text-align:center;" title="${s.enabled ? '已启用' : '已禁用'}">${s.enabled ? '✅' : '⭕'}</td>
             <td style="text-align:center;">${s.priority}</td>
             <td style="white-space:nowrap;">
@@ -1255,6 +1256,7 @@ function openCpaServiceModal(service = null) {
     document.getElementById('cpa-service-token').value = '';
     document.getElementById('cpa-service-priority').value = service ? service.priority : 0;
     document.getElementById('cpa-service-enabled').checked = service ? service.enabled : true;
+    document.getElementById('cpa-service-include-proxy-url').checked = service ? !!service.include_proxy_url : false;
     elements.cpaServiceModalTitle.textContent = service ? '编辑 CPA 服务' : '添加 CPA 服务';
     elements.cpaServiceEditModal.classList.add('active');
 }
@@ -1280,6 +1282,7 @@ async function handleSaveCpaService(e) {
     const apiToken = document.getElementById('cpa-service-token').value.trim();
     const priority = parseInt(document.getElementById('cpa-service-priority').value) || 0;
     const enabled = document.getElementById('cpa-service-enabled').checked;
+    const includeProxyUrl = document.getElementById('cpa-service-include-proxy-url').checked;
 
     if (!name || !apiUrl) {
         toast.error('名称和 API URL 不能为空');
@@ -1291,7 +1294,7 @@ async function handleSaveCpaService(e) {
     }
 
     try {
-        const payload = { name, api_url: apiUrl, priority, enabled };
+        const payload = { name, api_url: apiUrl, priority, enabled, include_proxy_url: includeProxyUrl };
         if (apiToken) payload.api_token = apiToken;
 
         if (id) {

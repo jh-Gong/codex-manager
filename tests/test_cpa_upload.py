@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 from src.core.upload import cpa_upload
 
 
@@ -108,3 +110,41 @@ def test_test_cpa_connection_uses_get_and_normalized_url(monkeypatch):
     assert message == "CPA 连接测试成功"
     assert calls[0]["url"] == "https://cpa.example.com/v0/management/auth-files"
     assert calls[0]["kwargs"]["headers"]["Authorization"] == "Bearer token-123"
+
+
+def test_generate_token_json_includes_account_proxy_url_when_enabled():
+    account = SimpleNamespace(
+        email="tester@example.com",
+        expires_at=None,
+        id_token="id-token",
+        account_id="acct-1",
+        access_token="access-token",
+        last_refresh=None,
+        refresh_token="refresh-token",
+        proxy_used="socks5://127.0.0.1:1080",
+    )
+
+    token_data = cpa_upload.generate_token_json(account, include_proxy_url=True)
+
+    assert token_data["proxy_url"] == "socks5://127.0.0.1:1080"
+
+
+def test_generate_token_json_uses_fallback_proxy_when_account_proxy_missing():
+    account = SimpleNamespace(
+        email="tester@example.com",
+        expires_at=None,
+        id_token="id-token",
+        account_id="acct-1",
+        access_token="access-token",
+        last_refresh=None,
+        refresh_token="refresh-token",
+        proxy_used=None,
+    )
+
+    token_data = cpa_upload.generate_token_json(
+        account,
+        include_proxy_url=True,
+        proxy_url="http://proxy.example.com:8080",
+    )
+
+    assert token_data["proxy_url"] == "http://proxy.example.com:8080"

@@ -139,6 +139,7 @@ class CpaService(Base):
     api_url = Column(String(500), nullable=False)  # API URL
     api_token = Column(Text, nullable=False)  # API Token
     enabled = Column(Boolean, default=True)
+    include_proxy_url = Column(Boolean, default=False)  # 是否将账号代理写入 auth file
     priority = Column(Integer, default=0)  # 优先级
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -89,17 +89,23 @@ def _post_cpa_auth_file_raw_json(upload_url: str, filename: str, file_content: b
     )
 
 
-def generate_token_json(account: Account) -> dict:
+def generate_token_json(
+    account: Account,
+    include_proxy_url: bool = False,
+    proxy_url: Optional[str] = None,
+) -> dict:
     """
     生成 CPA 格式的 Token JSON
 
     Args:
         account: 账号模型实例
+        include_proxy_url: 是否将账号代理写入 auth file 的 proxy_url 字段
+        proxy_url: 当账号本身没有记录代理时使用的兜底代理 URL
 
     Returns:
         CPA 格式的 Token 字典
     """
-    return {
+    token_data = {
         "type": "codex",
         "email": account.email,
         "expired": account.expires_at.strftime("%Y-%m-%dT%H:%M:%S+08:00") if account.expires_at else "",
@@ -109,6 +115,12 @@ def generate_token_json(account: Account) -> dict:
         "last_refresh": account.last_refresh.strftime("%Y-%m-%dT%H:%M:%S+08:00") if account.last_refresh else "",
         "refresh_token": account.refresh_token or "",
     }
+
+    resolved_proxy_url = (getattr(account, "proxy_used", None) or proxy_url or "").strip()
+    if include_proxy_url and resolved_proxy_url:
+        token_data["proxy_url"] = resolved_proxy_url
+
+    return token_data
 
 
 def upload_to_cpa(
@@ -185,15 +197,17 @@ def batch_upload_to_cpa(
     proxy: str = None,
     api_url: str = None,
     api_token: str = None,
+    include_proxy_url: bool = False,
 ) -> dict:
     """
     批量上传账号到 CPA 管理平台
 
     Args:
         account_ids: 账号 ID 列表
-        proxy: 可选的代理 URL
+        proxy: 可选的代理 URL（用于 auth file proxy_url 的兜底值）
         api_url: 指定 CPA API URL（优先于全局配置）
         api_token: 指定 CPA API Token（优先于全局配置）
+        include_proxy_url: 是否将账号代理写入 auth file 的 proxy_url 字段
 
     Returns:
         包含成功/失败统计和详情的字典
@@ -231,7 +245,11 @@ def batch_upload_to_cpa(
                 continue
 
             # 生成 Token JSON
-            token_data = generate_token_json(account)
+            token_data = generate_token_json(
+                account,
+                include_proxy_url=include_proxy_url,
+                proxy_url=proxy,
+            )
 
             # 上传
             success, message = upload_to_cpa(token_data, proxy, api_url=api_url, api_token=api_token)
