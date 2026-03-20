@@ -777,6 +777,10 @@ class RegistrationEngine:
                 self._log(f"8. 邮箱 {self.email} 在 OpenAI 已注册，跳过注册流程", "warning")
                 result.error_message = f"邮箱 {self.email} 已在 OpenAI 注册"
                 return result
+            elif self.email_service.service_type.value == "outlook":
+                # Outlook 邮箱注册跳过密码提交环节，直接生成密码备用
+                self._log("8. Outlook 邮箱，跳过密码注册环节")
+                self.password = self._generate_password()
             else:
                 self._log("8. 注册密码...")
                 password_ok, password = self._register_password()
