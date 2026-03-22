@@ -228,6 +228,9 @@ def _normalize_email_service_config(
 
 def _validate_execution_mode(execution_mode: str) -> str:
     mode = (execution_mode or "curl_cffi").strip().lower()
+    if mode == "playwright":
+        logger.warning("Playwright execution mode is disabled; falling back to curl_cffi")
+        return "curl_cffi"
     if mode not in ALLOWED_EXECUTION_MODES:
         raise HTTPException(status_code=400, detail=f"无效的执行方式: {execution_mode}")
     return mode

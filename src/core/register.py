@@ -1014,13 +1014,10 @@ class RegistrationEngine:
             return None
 
     def _is_browser_mode(self) -> bool:
-        if self.execution_mode:
-            return self.execution_mode == "playwright"
-        settings = get_settings()
-        return str(getattr(settings, "registration_mode", "browser")).strip().lower() != "http"
+        return False
 
     def _resolved_execution_mode(self) -> str:
-        return "playwright" if self._is_browser_mode() else "curl_cffi"
+        return "curl_cffi"
 
     def _run_browser_registration_flow(self):
         settings = get_settings()

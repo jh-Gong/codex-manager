@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import src.config.settings as settings_module
 import src.core.register as register_module
+import src.web.routes.registration as registration_routes
 from src.config.constants import EmailServiceType
 from src.core.openai.oauth import OAuthStart
 from src.services.base import BaseEmailService
@@ -57,10 +58,10 @@ def _make_engine(monkeypatch, settings=None):
     return register_module.RegistrationEngine(email_service=DummyEmailService())
 
 
-def test_settings_default_to_browser_registration_mode():
+def test_settings_default_to_http_registration_mode():
     settings = settings_module.Settings()
 
-    assert settings.registration_mode == "browser"
+    assert settings.registration_mode == "http"
     assert settings.registration_browser_headless is True
 
 
@@ -74,10 +75,9 @@ def test_browser_registration_runner_is_available():
     assert BrowserRegistrationArtifacts is not None
 
 
-def test_registration_engine_browser_mode_uses_runner_and_access_token_workspace_lookup(
-    monkeypatch,
-):
+def test_registration_engine_ignores_browser_mode_and_uses_http_flow(monkeypatch):
     engine = _make_engine(monkeypatch)
+    http_flow_used = {"called": False}
 
     monkeypatch.setattr(engine, "_check_ip_location", lambda: (True, "US"))
     monkeypatch.setattr(engine, "_init_session", lambda: True)
@@ -95,70 +95,29 @@ def test_registration_engine_browser_mode_uses_runner_and_access_token_workspace
     monkeypatch.setattr(
         engine,
         "_run_browser_registration_flow",
-        lambda: SimpleNamespace(
-            callback_url="http://localhost:1455/auth/callback?code=code-1&state=state-1",
-            session_token="session-token",
-            cookies="oai-did=device-1; __Secure-next-auth.session-token=session-token",
-            is_existing_account=False,
-            password_used="Password123!",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("browser flow should not run when playwright mode is disabled")
         ),
     )
-    monkeypatch.setattr(
-        engine,
-        "_handle_oauth_callback",
-        lambda callback_url: {
-            "account_id": "account-1",
-            "access_token": "access-1",
-            "refresh_token": "refresh-1",
-            "id_token": "id-1",
-        },
-    )
-    monkeypatch.setattr(
-        engine,
-        "_get_workspace_id_from_access_token",
-        lambda access_token: "ws-browser",
-    )
-
     monkeypatch.setattr(
         engine,
         "_get_device_id",
-        lambda: (_ for _ in ()).throw(
-            AssertionError("legacy HTTP flow should not run in browser mode")
-        ),
+        lambda: http_flow_used.update(called=True) or "did-1",
     )
+    monkeypatch.setattr(engine, "_check_sentinel", lambda did: None)
     monkeypatch.setattr(
         engine,
         "_submit_signup_form",
-        lambda *args, **kwargs: (_ for _ in ()).throw(
-            AssertionError("legacy signup flow should not run")
-        ),
-    )
-    monkeypatch.setattr(
-        engine,
-        "_get_workspace_id",
-        lambda: (_ for _ in ()).throw(
-            AssertionError("cookie workspace parsing should not run in browser mode")
-        ),
-    )
-    monkeypatch.setattr(
-        engine,
-        "_select_workspace",
-        lambda workspace_id: (_ for _ in ()).throw(
-            AssertionError("workspace/select should not run in browser mode")
+        lambda *args, **kwargs: register_module.SignupFormResult(
+            success=False,
+            error_message="stop after confirming HTTP flow",
         ),
     )
 
     result = engine.run()
 
-    assert result.success is True
-    assert result.account_id == "account-1"
-    assert result.access_token == "access-1"
-    assert result.refresh_token == "refresh-1"
-    assert result.id_token == "id-1"
-    assert result.workspace_id == "ws-browser"
-    assert result.session_token == "session-token"
-    assert result.password == "Password123!"
-    assert result.cookies.startswith("oai-did=device-1")
+    assert http_flow_used["called"] is True
+    assert result.success is False
 
 
 def test_save_to_database_persists_browser_cookies(monkeypatch):
@@ -203,10 +162,15 @@ def test_execution_mode_http_override_skips_browser_mode(monkeypatch):
     assert engine._is_browser_mode() is False
 
 
-def test_execution_mode_playwright_override_forces_browser_mode(monkeypatch):
+def test_execution_mode_playwright_override_is_downgraded_to_http(monkeypatch):
     settings = SimpleNamespace(**vars(_browser_settings()))
     settings.registration_mode = "http"
     engine = _make_engine(monkeypatch, settings=settings)
     engine.execution_mode = "playwright"
 
-    assert engine._is_browser_mode() is True
+    assert engine._is_browser_mode() is False
+    assert engine._resolved_execution_mode() == "curl_cffi"
+
+
+def test_route_execution_mode_playwright_is_normalized_to_http():
+    assert registration_routes._validate_execution_mode("playwright") == "curl_cffi"

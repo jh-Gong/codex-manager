@@ -26,6 +26,7 @@ let availableServices = {
     duck_mail: { available: false, services: [] }
 };
 const EXECUTION_MODE_STORAGE_KEY = 'registrationExecutionMode';
+const ENABLED_EXECUTION_MODE = 'curl_cffi';
 
 // WebSocket 相关变量
 let webSocket = null;
@@ -229,19 +230,23 @@ function initEventListeners() {
 function restoreExecutionMode() {
     if (!elements.executionMode) return;
     const savedMode = localStorage.getItem(EXECUTION_MODE_STORAGE_KEY);
-    elements.executionMode.value = savedMode || 'curl_cffi';
+    const normalizedMode = savedMode === ENABLED_EXECUTION_MODE ? savedMode : ENABLED_EXECUTION_MODE;
+    elements.executionMode.value = normalizedMode;
+    localStorage.setItem(EXECUTION_MODE_STORAGE_KEY, normalizedMode);
 }
 
 function handleExecutionModeChange(e) {
-    localStorage.setItem(EXECUTION_MODE_STORAGE_KEY, e.target.value || 'curl_cffi');
+    const normalizedMode = e.target.value === ENABLED_EXECUTION_MODE ? e.target.value : ENABLED_EXECUTION_MODE;
+    e.target.value = normalizedMode;
+    localStorage.setItem(EXECUTION_MODE_STORAGE_KEY, normalizedMode);
 }
 
 function getCurrentExecutionMode() {
-    return elements.executionMode ? (elements.executionMode.value || 'curl_cffi') : 'curl_cffi';
+    return elements.executionMode ? (elements.executionMode.value || ENABLED_EXECUTION_MODE) : ENABLED_EXECUTION_MODE;
 }
 
 function getExecutionModeFailureHint() {
-    return getCurrentExecutionMode() === 'curl_cffi' ? '，可切换到 Playwright 重试' : '';
+    return '';
 }
 
 // 加载可用的邮箱服务
@@ -465,7 +470,7 @@ async function handleStartRegistration(e) {
     }
 
     const [emailServiceType, serviceId] = selectedValue.split(':');
-    const executionMode = elements.executionMode ? (elements.executionMode.value || 'curl_cffi') : 'curl_cffi';
+    const executionMode = getCurrentExecutionMode();
 
     // 禁用开始按钮
     elements.startBtn.disabled = true;
@@ -1185,7 +1190,7 @@ async function handleOutlookBatchRegistration() {
 
     const requestData = {
         service_ids: selectedIds,
-        execution_mode: elements.executionMode ? (elements.executionMode.value || 'curl_cffi') : 'curl_cffi',
+        execution_mode: getCurrentExecutionMode(),
         skip_registered: skipRegistered,
         interval_min: intervalMin,
         interval_max: intervalMax,

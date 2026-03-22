@@ -238,7 +238,7 @@ SETTING_DEFINITIONS: Dict[str, SettingDefinition] = {
     ),
     "registration_mode": SettingDefinition(
         db_key="registration.mode",
-        default_value="browser",
+        default_value="http",
         category=SettingCategory.REGISTRATION,
         description="注册流程模式 (browser/http)"
     ),
@@ -681,7 +681,7 @@ class Settings(BaseModel):
     registration_max_retries: int = 3
     registration_timeout: int = 120
     registration_default_password_length: int = 12
-    registration_mode: str = "browser"
+    registration_mode: str = "http"
     registration_browser_headless: bool = True
     registration_browser_timeout: int = 120
     registration_sleep_min: int = 5
