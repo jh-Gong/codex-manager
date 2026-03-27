@@ -95,10 +95,12 @@ async function generateLink() {
 
     const country = document.getElementById('country-select').value || 'SG';
 
+    const currency = countryCurrencyMap[country] || '';
     const body = {
         account_id: parseInt(accountId),
         plan_type: selectedPlan,
         country: country,
+        currency: currency,
     };
 
     if (selectedPlan === 'team') {

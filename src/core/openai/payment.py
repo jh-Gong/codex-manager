@@ -96,12 +96,13 @@ def generate_plus_link(
     account: Account,
     proxy: Optional[str] = None,
     country: str = "SG",
+    currency: Optional[str] = None,
 ) -> str:
     """生成 Plus 支付链接（后端携带账号 cookie 发请求）"""
     if not account.access_token:
         raise ValueError("账号缺少 access_token")
 
-    currency = _COUNTRY_CURRENCY_MAP.get(country, "USD")
+    currency = currency or _COUNTRY_CURRENCY_MAP.get(country, "USD")
     headers = {
         "Authorization": f"Bearer {account.access_token}",
         "Content-Type": "application/json",
@@ -145,12 +146,13 @@ def generate_team_link(
     seat_quantity: int = 5,
     proxy: Optional[str] = None,
     country: str = "SG",
+    currency: Optional[str] = None,
 ) -> str:
     """生成 Team 支付链接（后端携带账号 cookie 发请求）"""
     if not account.access_token:
         raise ValueError("账号缺少 access_token")
 
-    currency = _COUNTRY_CURRENCY_MAP.get(country, "USD")
+    currency = currency or _COUNTRY_CURRENCY_MAP.get(country, "USD")
     headers = {
         "Authorization": f"Bearer {account.access_token}",
         "Content-Type": "application/json",

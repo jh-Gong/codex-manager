@@ -356,6 +356,12 @@ SETTING_DEFINITIONS: Dict[str, SettingDefinition] = {
         category=SettingCategory.EMAIL,
         description="验证码轮询间隔（秒）"
     ),
+    "email_code_resend_max_retries": SettingDefinition(
+        db_key="email_code.resend_max_retries",
+        default_value=2,
+        category=SettingCategory.EMAIL,
+        description="收件箱未找到验证码时，最多重新发送验证码的次数"
+    ),
 
     # Outlook 配置
     "outlook_provider_priority": SettingDefinition(
@@ -407,6 +413,7 @@ SETTING_TYPES: Dict[str, Type] = {
     "cpa_enabled": bool,
     "email_code_timeout": int,
     "email_code_poll_interval": int,
+    "email_code_resend_max_retries": int,
     "outlook_provider_priority": list,
     "outlook_health_failure_threshold": int,
     "outlook_health_disable_duration": int,
@@ -707,6 +714,7 @@ class Settings(BaseModel):
     # 验证码配置
     email_code_timeout: int = 120
     email_code_poll_interval: int = 3
+    email_code_resend_max_retries: int = 2
 
     # Outlook 配置
     outlook_provider_priority: List[str] = ["imap_old", "imap_new", "graph_api"]
